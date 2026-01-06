@@ -16,4 +16,4 @@ The core serialization logic was verified using a host-based C compiler
 embedded firmware projects where the JSON string can be transmitted over
 UART, Serial, or network interfaces.
 
-## Build & Run (Arduino_demo.ino)
+## Build & Run (arduino_demo.ino)
