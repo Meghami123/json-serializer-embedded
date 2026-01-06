@@ -1,0 +1,62 @@
+#include "json_serializer.h"
+#include <stdio.h>
+#include <string.h>
+#include <stdarg.h>
+
+static int append_json(char **ptr, size_t *remaining, const char *fmt, ...)
+{
+    va_list args;
+    va_start(args, fmt);
+    int n = vsnprintf(*ptr, *remaining, fmt, args);
+    va_end(args);
+
+    if (n < 0 || (size_t)n >= *remaining)
+        return SERIALIZE_ERR_BUFFER;
+
+    *ptr += n;
+    *remaining -= n;
+    return SERIALIZE_OK;
+}
+
+int serialize_to_json(
+    const MeterPayload *input,
+    char *output,
+    size_t output_size
+) {
+    if (!input || !output || output_size == 0)
+        return SERIALIZE_ERR_INPUT;
+
+    char *ptr = output;
+    size_t remaining = output_size;
+
+    append_json(&ptr, &remaining, "[{");
+    append_json(&ptr, &remaining, "\"gatewayId\":\"%s\",", input->meta.gatewayId);
+    append_json(&ptr, &remaining, "\"date\":\"%s\",", input->meta.date);
+    append_json(&ptr, &remaining, "\"deviceType\":\"%s\",", input->meta.deviceType);
+    append_json(&ptr, &remaining, "\"interval_minutes\":%d,", input->meta.interval_minutes);
+    append_json(&ptr, &remaining, "\"total_readings\":%d,", input->meta.total_readings);
+
+    append_json(&ptr, &remaining, "\"values\":{");
+    append_json(&ptr, &remaining, "\"device_count\":%d,", input->values.device_count);
+    append_json(&ptr, &remaining, "\"readings\":[");
+
+    const DeviceReading *r = &input->values.readings[0];
+
+    append_json(&ptr, &remaining, "{");
+    append_json(&ptr, &remaining, "\"media\":\"%s\",", r->media);
+    append_json(&ptr, &remaining, "\"meter\":\"%s\",", r->meter);
+    append_json(&ptr, &remaining, "\"deviceId\":\"%s\",", r->deviceId);
+    append_json(&ptr, &remaining, "\"unit\":\"%s\",", r->unit);
+
+    append_json(&ptr, &remaining, "\"data\":[{");
+    append_json(&ptr, &remaining, "\"timestamp\":\"%s\",", r->data[0].timestamp);
+    append_json(&ptr, &remaining, "\"meter_datetime\":\"%s\",", r->data[0].meter_datetime);
+    append_json(&ptr, &remaining, "\"total_m3\":%.3f,", r->data[0].total_m3);
+    append_json(&ptr, &remaining, "\"status\":\"%s\"", r->data[0].status);
+    append_json(&ptr, &remaining, "}]}");
+
+    append_json(&ptr, &remaining, "]}");
+    append_json(&ptr, &remaining, "}]");
+
+    return SERIALIZE_OK;
+}
