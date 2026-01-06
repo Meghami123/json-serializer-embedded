@@ -1,0 +1,52 @@
+#ifndef JSON_SERIALIZER_H
+#define JSON_SERIALIZER_H
+
+#include <stddef.h>
+
+/* Error codes */
+#define SERIALIZE_OK 0
+#define SERIALIZE_ERR_BUFFER -1
+#define SERIALIZE_ERR_INPUT  -2
+
+typedef struct {
+    char gatewayId[32];
+    char date[11];
+    char deviceType[20];
+    int  interval_minutes;
+    int  total_readings;
+} GatewayMeta;
+
+typedef struct {
+    char timestamp[20];
+    char meter_datetime[20];
+    float total_m3;
+    char status[8];
+} DataPoint;
+
+typedef struct {
+    char media[10];
+    char meter[15];
+    char deviceId[32];
+    char unit[8];
+    int  data_count;
+    DataPoint data[1];
+} DeviceReading;
+
+typedef struct {
+    int device_count;
+    DeviceReading readings[1];
+} ValuesBlock;
+
+typedef struct {
+    GatewayMeta meta;
+    ValuesBlock values;
+} MeterPayload;
+
+/* Serialization API */
+int serialize_to_json(
+    const MeterPayload *input,
+    char *output,
+    size_t output_size
+);
+
+#endif
